@@ -1,0 +1,273 @@
+AllerPredict AI - System Architecture Diagram
+==============================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│                           PRESENTATION LAYER                                │
+│                                                                             │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │                      React Frontend (Port 3000)                       │ │
+│  │                                                                       │ │
+│  │  ┌─────────────────┐  ┌─────────────────┐  ┌────────────────────┐   │ │
+│  │  │  Product Panel  │  │  Chat Interface │  │  Mode Selector     │   │ │
+│  │  │  - Search       │  │  - Messages     │  │  - Agentic         │   │ │
+│  │  │  - Product List │  │  - User/Bot     │  │  - Legacy RAG      │   │ │
+│  │  │  - Click to     │  │  - Loading      │  │                    │   │ │
+│  │  │    Analyze      │  │    States       │  │                    │   │ │
+│  │  └─────────────────┘  └─────────────────┘  └────────────────────┘   │ │
+│  │                                                                       │ │
+│  └───────────────────────────────┬───────────────────────────────────────┘ │
+│                                  │                                         │
+└──────────────────────────────────┼─────────────────────────────────────────┘
+                                   │ HTTP/REST (JSON)
+                                   │ POST /api/v2/analyze
+                                   │ GET /api/v2/products
+                                   │
+┌──────────────────────────────────▼─────────────────────────────────────────┐
+│                                                                             │
+│                           APPLICATION LAYER                                 │
+│                                                                             │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │                   FastAPI Backend (Port 8000)                         │ │
+│  │                                                                       │ │
+│  │  ┌─────────────────────────────────────────────────────────────────┐ │ │
+│  │  │                    REST API Endpoints                           │ │ │
+│  │  │                                                                 │ │ │
+│  │  │  V2 (Agentic):               Legacy (RAG):                     │ │ │
+│  │  │  POST /api/v2/analyze        POST /analyze_product             │ │ │
+│  │  │  GET  /api/v2/products       GET  /products                    │ │ │
+│  │  │  GET  /api/v2/health                                           │ │ │
+│  │  │                                                                 │ │ │
+│  │  └────────────────────┬────────────────────────────────────────────┘ │ │
+│  │                       │                                              │ │
+│  │  ┌────────────────────▼──────────────────────────────────────────┐  │ │
+│  │  │                   Request Validation                          │  │ │
+│  │  │                   CORS Middleware                             │  │ │
+│  │  │                   Error Handling                              │  │ │
+│  │  └────────────────────┬──────────────────────────────────────────┘  │ │
+│  │                       │                                              │ │
+│  └───────────────────────┼──────────────────────────────────────────────┘ │
+│                          │                                                │
+└──────────────────────────┼────────────────────────────────────────────────┘
+                           │
+┌──────────────────────────▼────────────────────────────────────────────────┐
+│                                                                            │
+│                             MCP LAYER                                      │
+│                                                                            │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │                      MCP Server (FastMCP)                          │  │
+│  │                                                                    │  │
+│  │  ┌──────────────────────────────────────────────────────────────┐ │  │
+│  │  │  Tool: analyze_product                                       │ │  │
+│  │  │  - Input Schema: ProductAnalysisInput                        │ │  │
+│  │  │  - Output Schema: ProductAnalysisOutput                      │ │  │
+│  │  └──────────────────────────────────────────────────────────────┘ │  │
+│  │                                                                    │  │
+│  │  ┌──────────────────────────────────────────────────────────────┐ │  │
+│  │  │  Tool: get_products                                          │ │  │
+│  │  │  - Returns product list                                      │ │  │
+│  │  └──────────────────────────────────────────────────────────────┘ │  │
+│  │                                                                    │  │
+│  │  ┌──────────────────────────────────────────────────────────────┐ │  │
+│  │  │  Tool: health_check                                          │ │  │
+│  │  │  - System status                                             │ │  │
+│  │  └──────────────────────────────────────────────────────────────┘ │  │
+│  │                                                                    │  │
+│  └────────────────────────────┬───────────────────────────────────────┘  │
+│                               │                                           │
+└───────────────────────────────┼───────────────────────────────────────────┘
+                                │
+┌───────────────────────────────▼───────────────────────────────────────────┐
+│                                                                            │
+│                          AGENTIC AI LAYER                                  │
+│                                                                            │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │                   CrewAI Multi-Agent System                        │  │
+│  │                                                                    │  │
+│  │  ┌────────────────────────────────────────────────────────────┐   │  │
+│  │  │              AllerPredictCrew (Orchestrator)               │   │  │
+│  │  │                                                            │   │  │
+│  │  │  1. Create Tasks                                          │   │  │
+│  │  │  2. Assign to Agents                                      │   │  │
+│  │  │  3. Execute Workflow (Sequential)                         │   │  │
+│  │  │  4. Aggregate Results                                     │   │  │
+│  │  └────────────────────────────────────────────────────────────┘   │  │
+│  │                                                                    │  │
+│  │  ┌───────────────────────┐         ┌────────────────────────────┐ │  │
+│  │  │   AGENT 1             │         │   AGENT 2                  │ │  │
+│  │  │                       │         │                            │ │  │
+│  │  │ Product Safety        │────────▶│ Recommendation             │ │  │
+│  │  │ Analyst               │ Context │ Specialist                 │ │  │
+│  │  │                       │         │                            │ │  │
+│  │  │ Role: Analyze         │         │ Role: Suggest              │ │  │
+│  │  │ allergens & risks     │         │ alternatives               │ │  │
+│  │  │                       │         │                            │ │  │
+│  │  │ Tools:                │         │ Tools: None                │ │  │
+│  │  │ - RAG Tool            │         │                            │ │  │
+│  │  │                       │         │ Dependencies:              │ │  │
+│  │  │ Output:               │         │ - Agent 1 results          │ │  │
+│  │  │ - Allergens           │         │                            │ │  │
+│  │  │ - Risk level          │         │ Output:                    │ │  │
+│  │  │ - Ethical score       │         │ - Alternatives             │ │  │
+│  │  │ - Concerns            │         │ - Recommendations          │ │  │
+│  │  │                       │         │ - Final report             │ │  │
+│  │  └───────────┬───────────┘         └────────────────────────────┘ │  │
+│  │              │                                                     │  │
+│  └──────────────┼─────────────────────────────────────────────────────┘  │
+│                 │                                                         │
+└─────────────────┼─────────────────────────────────────────────────────────┘
+                  │
+┌─────────────────▼─────────────────────────────────────────────────────────┐
+│                                                                            │
+│                           DATA & RAG LAYER                                 │
+│                                                                            │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │                        RAG Engine                                  │  │
+│  │                                                                    │  │
+│  │  ┌──────────────────────────────────────────────────────────────┐ │  │
+│  │  │  SentenceTransformer Model (all-MiniLM-L6-v2)               │ │  │
+│  │  │  - 384-dimensional embeddings                                │ │  │
+│  │  │  - Loaded once at startup                                    │ │  │
+│  │  └──────────────────────────────────────────────────────────────┘ │  │
+│  │                                                                    │  │
+│  │  ┌──────────────────────────────────────────────────────────────┐ │  │
+│  │  │  Vector Store (In-Memory NumPy)                              │ │  │
+│  │  │                                                              │ │  │
+│  │  │  Product 1: [0.23, -0.45, 0.12, ... , 0.67]  (384 dims)     │ │  │
+│  │  │  Product 2: [0.11, -0.32, 0.54, ... , 0.23]                 │ │  │
+│  │  │  ...                                                         │ │  │
+│  │  │  Product 20: [-0.45, 0.78, -0.12, ... , 0.91]               │ │  │
+│  │  │                                                              │ │  │
+│  │  │  Query Process:                                              │ │  │
+│  │  │  1. Encode query → vector                                   │ │  │
+│  │  │  2. Calculate cosine similarity                             │ │  │
+│  │  │  3. Return top-3 matches                                    │ │  │
+│  │  └──────────────────────────────────────────────────────────────┘ │  │
+│  │                                                                    │  │
+│  │  ┌──────────────────────────────────────────────────────────────┐ │  │
+│  │  │  Product Metadata (JSON)                                     │ │  │
+│  │  │                                                              │ │  │
+│  │  │  {                                                           │ │  │
+│  │  │    "id": "0",                                                │ │  │
+│  │  │    "name": "Oreo Cookies",                                   │ │  │
+│  │  │    "category": "Snacks",                                     │ │  │
+│  │  │    "brand": "Oreo",                                          │ │  │
+│  │  │    "ingredients": "wheat flour, sugar, ...",                 │ │  │
+│  │  │    "allergen_warnings": "gluten, soy",                       │ │  │
+│  │  │    "ethical_notes": "Environmental concerns",                │ │  │
+│  │  │    "recommendations": "Biscoff, Tiffany"                     │ │  │
+│  │  │  }                                                           │ │  │
+│  │  │                                                              │ │  │
+│  │  │  Total: 20 products                                          │ │  │
+│  │  └──────────────────────────────────────────────────────────────┘ │  │
+│  │                                                                    │  │
+│  └────────────────────────────────────────────────────────────────────┘  │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+
+DATA FLOW SEQUENCE DIAGRAM:
+===========================
+
+User → Frontend → Backend → MCP → CrewAI → Agent1 → RAG → Agent2 → Response
+
+Detailed Flow:
+
+1. User clicks "Oreo Cookies"
+   │
+2. Frontend sends POST /api/v2/analyze
+   │  Body: { "product_name": "Oreo Cookies" }
+   │
+3. FastAPI validates request
+   │  Creates ProductAnalysisInput
+   │
+4. MCP Tool receives request
+   │  Enhances query with context
+   │
+5. CrewAI creates Analysis Task
+   │  Assigns to Product Safety Analyst
+   │
+6. Agent 1 calls RAG Tool
+   │  Input: "Oreo Cookies"
+   │
+7. RAG Engine processes:
+   │  a. Encode query → [0.15, -0.23, ..., 0.44]
+   │  b. Calculate similarities
+   │  c. Return top-3 products
+   │     - Oreo Cookies (0.98)
+   │     - Biscoff Cookies (0.65)
+   │     - Tiffany Cookies (0.58)
+   │
+8. Agent 1 analyzes results
+   │  Output: {
+   │    allergens: ["gluten", "soy"],
+   │    risk_level: "medium",
+   │    ethical_score: 40,
+   │    concerns: ["Environmental issues"]
+   │  }
+   │
+9. CrewAI creates Recommendation Task
+   │  Context: Agent 1's analysis
+   │  Assigns to Recommendation Specialist
+   │
+10. Agent 2 generates recommendations
+    │  Output: {
+    │    alternatives: ["Biscoff", "Tiffany"],
+    │    advice: "Look for gluten-free options",
+    │    verdict: "Consider alternatives for allergies"
+    │  }
+    │
+11. MCP Tool formats response
+    │  ProductAnalysisOutput created
+    │
+12. FastAPI returns JSON
+    │
+13. Frontend displays:
+    │  - Analysis bubble
+    │  - Recommendations
+    │  - Full report (expandable)
+
+
+TECHNOLOGY STACK:
+=================
+
+┌─────────────────────┬────────────────────────────────────────┐
+│ Layer               │ Technologies                           │
+├─────────────────────┼────────────────────────────────────────┤
+│ Frontend            │ React 18, Vite, Tailwind CSS          │
+│ API Gateway         │ FastAPI, Uvicorn, Pydantic            │
+│ MCP                 │ FastMCP, MCP Protocol                 │
+│ Agents              │ CrewAI, Multi-Agent Framework         │
+│ RAG                 │ SentenceTransformers, NumPy           │
+│ Embeddings          │ all-MiniLM-L6-v2 (384-dim)            │
+│ Data Store          │ JSON files, In-memory vectors         │
+│ Communication       │ HTTP/REST, JSON                       │
+└─────────────────────┴────────────────────────────────────────┘
+
+
+KEY DESIGN PATTERNS:
+====================
+
+1. Layered Architecture
+   - Clear separation of concerns
+   - Each layer has specific responsibility
+
+2. Tool Wrapper Pattern
+   - RAG wrapped as CrewAI tool
+   - CrewAI wrapped as MCP tool
+   - MCP exposed via REST API
+
+3. Agent Delegation
+   - Analysis Agent can delegate
+   - Recommendation Agent receives context
+   - Sequential workflow execution
+
+4. Schema Validation
+   - Pydantic models at every layer
+   - Type safety throughout
+   - Clear contracts between components
+
+5. Backward Compatibility
+   - Legacy endpoints maintained
+   - V2 endpoints for new features
+   - Gradual migration path
