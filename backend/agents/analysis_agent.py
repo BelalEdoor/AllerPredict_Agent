@@ -1,87 +1,220 @@
 """
-Analysis Agent - Responsible for product analysis using RAG
+Simplified Analysis Agent
+Clear, easy-to-understand AI agent for product safety analysis
 """
 from crewai import Agent
 from langchain_community.llms import Ollama
-from typing import Dict, Any
 
-class AnalysisAgentConfig:
-    """Configuration for the Analysis Agent"""
+class SafetyAnalysisAgent:
+    """
+    Creates and manages the Product Safety Analyst agent
+    Simple and focused on accuracy
+    """
     
     @staticmethod
-    def create_agent(rag_tool) -> Agent:
+    def create(analysis_tool):
         """
-        Creates the Analysis Agent that performs allergen detection,
-        ethical analysis, and risk assessment.
+        Create the safety analyst agent
         
         Args:
-            rag_tool: The RAG analysis tool to be used by the agent
+            analysis_tool: The product analysis tool
             
         Returns:
-            Agent: Configured Analysis Agent
+            Agent: Configured safety analyst
         """
-        # Use Ollama as the LLM backend
-        llm = Ollama(
-            model="llama2",
-            temperature=0.7
+        # Create AI language model
+        ai_model = Ollama(
+            model="mistral",
+            temperature=0.3  # Lower temperature = more focused and accurate
         )
         
         return Agent(
             role="Product Safety Analyst",
-            goal="Analyze food products for allergens, safety risks, and ethical concerns using comprehensive product data",
-            backstory="""You are an expert food safety analyst with deep knowledge of:
-            - Common food allergens (gluten, dairy, nuts, soy, etc.)
-            - Product ingredient analysis
-            - Ethical and sustainability concerns in food manufacturing
-            - Risk assessment methodologies
             
-            You use advanced RAG (Retrieval-Augmented Generation) technology to access 
-            a comprehensive database of product information and provide accurate, 
-            evidence-based analysis.
+            goal="Find and analyze food products to identify allergens, safety risks, and provide accurate health information",
             
-            Your analysis helps people with allergies, dietary restrictions, or 
-            ethical concerns make informed decisions about food products.""",
-            tools=[rag_tool] if rag_tool else [],  # تأكد إنو list
+            backstory="""You are a professional food safety expert who helps people stay safe.
+
+Your expertise includes:
+- Identifying all types of food allergens (nuts, dairy, gluten, soy, eggs, etc.)
+- Understanding ingredient lists and food labels
+- Assessing risk levels for people with allergies
+- Providing clear, accurate safety information
+
+You always:
+1. Search the database carefully to find the exact product
+2. List ALL allergens clearly
+3. Explain risks in simple language
+4. Be honest if information is missing or uncertain
+
+Your priority is keeping people safe through accurate information.""",
+            
+            tools=[analysis_tool],
             verbose=True,
             allow_delegation=True,
-            llm=llm
-            # أزلنا max_iter لأنو مش مدعوم بهاد الإصدار
+            llm=ai_model
         )
     
     @staticmethod
-    def create_task(agent: Agent, product_query: str) -> Dict[str, Any]:
+    def create_task(agent, product_name):
         """
-        Creates an analysis task for the agent
+        Create a clear analysis task
         
         Args:
-            agent: The Analysis Agent
-            product_query: User's product query
+            agent: The safety analyst agent
+            product_name: Product to analyze
             
         Returns:
-            Dict containing task configuration
+            dict: Task configuration
         """
         return {
-            "description": f"""Analyze the following product query: "{product_query}"
+            "description": f"""
+TASK: Analyze this product for safety: "{product_name}"
+
+STEPS TO FOLLOW:
+1. Use the Product Safety Analysis Tool to search for: {product_name}
+2. Carefully read all the information returned
+3. Create a clear safety report
+
+YOUR REPORT MUST INCLUDE:
+
+✅ PRODUCT IDENTIFICATION
+- Exact product name
+- Brand name
+- Product category
+
+⚠️ ALLERGEN INFORMATION
+- List EVERY allergen found (be complete and accurate)
+- If no allergens: clearly state "No allergens detected"
+- Explain what each allergen means
+
+📊 RISK ASSESSMENT
+- Risk level: Low, Medium, or High
+- Explain WHY this risk level was assigned
+- Mention any "may contain" warnings
+
+🌍 ETHICAL INFORMATION
+- Ethical score (0-100)
+- Explain the score
+- Mention any concerns or positive factors
+
+⚠️ IMPORTANT RULES:
+- Do NOT make up information
+- If the product is not found, say so clearly
+- If information is missing, state that clearly
+- Always prioritize accuracy over completeness
+""",
             
-            Your analysis must include:
-            1. Product identification and category
-            2. Complete list of detected allergens
-            3. Risk level assessment (low/medium/high)
-            4. Ethical score (0-100) based on:
-               - Labor practices
-               - Environmental impact
-               - Supply chain transparency
-            5. Key concerns or warnings
+            "expected_output": """
+A complete safety report with:
+1. Product identification (name, brand, category)
+2. Complete allergen list with explanations
+3. Risk level with clear reasoning
+4. Ethical score with explanation
+5. Any warnings or important notes
+"""
+        }
+
+
+class RecommendationAgent:
+    """
+    Creates and manages the Recommendation Specialist agent
+    Suggests safer alternatives
+    """
+    
+    @staticmethod
+    def create():
+        """
+        Create the recommendation specialist agent
+        
+        Returns:
+            Agent: Configured recommendation specialist
+        """
+        ai_model = Ollama(
+            model="mistral",
+            temperature=0.5  # Slightly creative for recommendations
+        )
+        
+        return Agent(
+            role="Product Recommendation Specialist",
             
-            Use the RAG tool to retrieve accurate product information.
-            If the product is not found or information is insufficient, clearly state this.
-            """,
-            "agent": agent,
-            "expected_output": """A structured analysis containing:
-            - Product name and brand
-            - Detected allergens (list)
-            - Risk level (low/medium/high)
-            - Ethical score (0-100)
-            - Detailed concerns and warnings
-            """
+            goal="Suggest safer, healthier, and more ethical alternatives based on the safety analysis",
+            
+            backstory="""You are a nutrition and shopping expert who helps people find better products.
+
+Your expertise includes:
+- Knowing allergen-free alternatives
+- Understanding ethical and sustainable brands
+- Recommending products that match people's needs
+- Giving practical shopping advice
+
+You always:
+1. Suggest 2-4 specific alternative products when possible
+2. Explain WHY each alternative is better
+3. Consider both safety AND ethics
+4. Give practical advice people can actually use
+
+Your goal is helping people make better, safer choices.""",
+            
+            verbose=True,
+            allow_delegation=False,
+            llm=ai_model
+        )
+    
+    @staticmethod
+    def create_task(agent, safety_analysis):
+        """
+        Create a recommendation task
+        
+        Args:
+            agent: The recommendation agent
+            safety_analysis: Results from safety analysis
+            
+        Returns:
+            dict: Task configuration
+        """
+        return {
+            "description": f"""
+TASK: Create helpful recommendations based on this safety analysis:
+
+{safety_analysis}
+
+YOUR RECOMMENDATIONS MUST INCLUDE:
+
+📋 SAFETY SUMMARY
+- Quickly summarize the main safety concerns
+- Highlight the most important allergens or risks
+- Use simple, clear language
+
+💡 ALTERNATIVE PRODUCTS (2-4 suggestions)
+- Suggest specific safer alternatives
+- For each alternative, explain:
+  * Why it's safer (e.g., "dairy-free", "nut-free")
+  * Why it's more ethical (if applicable)
+  * Where to find it (if you know)
+
+🛒 SHOPPING TIPS
+- What to look for on labels
+- What ingredients/warnings to avoid
+- How to shop more safely
+
+✅ FINAL RECOMMENDATION
+- Should they avoid this product? (Yes/No/With Caution)
+- Overall safety rating (1-5 stars)
+- One-sentence summary
+
+⚠️ IMPORTANT RULES:
+- Be specific with product names when possible
+- If no alternatives are in the database, give general guidance
+- Always explain your reasoning
+- Be helpful and practical
+""",
+            
+            "expected_output": """
+A helpful recommendation report with:
+1. Clear safety summary
+2. 2-4 specific alternative products with explanations
+3. Practical shopping tips
+4. Final recommendation and rating
+"""
         }

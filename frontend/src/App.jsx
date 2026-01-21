@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
 
-
 export default function App() {
   const [messages, setMessages] = useState([])
   const [products, setProducts] = useState([])
@@ -15,16 +14,28 @@ export default function App() {
   useEffect(() => { scrollToBottom() }, [messages])
 
   useEffect(() => {
-    const mockProducts = [
-      { name: 'Nutella Hazelnut Spread', brand: 'Ferrero', category: 'Spreads' },
-      { name: 'Coca-Cola Classic', brand: 'Coca-Cola', category: 'Beverages' },
-      { name: 'Lay\'s Potato Chips', brand: 'PepsiCo', category: 'Snacks' },
-      { name: 'Oreo Cookies', brand: 'Mondelez', category: 'Cookies' },
-      { name: 'Kind Dark Chocolate', brand: 'Kind LLC', category: 'Bars' }
-    ]
-    setProducts(mockProducts)
-    setFilteredProducts(mockProducts)
-  }, [])
+    const endpoint = useAgenticMode ? "/api/v2/products" : "/products"
+    
+    fetch(`http://localhost:8000${endpoint}`)
+      .then(res => res.json())
+      .then(data => {
+        const productList = data.products || data
+        setProducts(productList)
+        setFilteredProducts(productList)
+      })
+      .catch(err => {
+        console.error("Error loading products:", err)
+        const fallback = [
+          { name: 'Nutella Hazelnut Spread', brand: 'Ferrero', category: 'Spreads' },
+          { name: 'Coca-Cola Classic', brand: 'Coca-Cola', category: 'Beverages' },
+          { name: 'Lay\'s Potato Chips', brand: 'PepsiCo', category: 'Snacks' },
+          { name: 'Oreo Cookies', brand: 'Mondelez', category: 'Cookies' },
+          { name: 'Kind Dark Chocolate', brand: 'Kind LLC', category: 'Bars' }
+        ]
+        setProducts(fallback)
+        setFilteredProducts(fallback)
+      })
+  }, [useAgenticMode])
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -37,28 +48,75 @@ export default function App() {
     setFilteredProducts(filtered)
   }, [search, products])
 
-  const analyzeProduct = (productName) => {
+  const analyzeProduct = async (productName) => {
     const userMessage = { type: 'user', text: productName }
     setMessages(prev => [...prev, userMessage])
     setLoading(true)
 
-    setTimeout(() => {
-      const mockResponse = {
-        type: useAgenticMode ? 'bot-agentic' : 'bot-legacy',
-        data: useAgenticMode ? {
-          analysis: `Product: ${productName}\n\n✓ Detected Allergens: Nuts, Dairy\n✓ Risk Level: HIGH\n✓ Ethical Score: 65/100\n\nThis product contains multiple allergens and should be avoided by individuals with nut or dairy sensitivities.`,
-          recommendations: `Safer Alternatives:\n• Enjoy Life Foods Seed Butter\n• Sun Butter Organic\n• Barney Butter Almond Butter\n\nThese alternatives are allergen-free and ethically sourced.`,
-          agents_used: ['Analysis Agent', 'Recommendation Agent']
-        } : {
-          detected_allergens: ['Nuts', 'Dairy'],
-          risk_level: 'HIGH',
-          ethical_score: 65,
-          recommendations: ['Enjoy Life Seed Butter', 'Sun Butter Organic']
-        }
+    try {
+      const endpoint = useAgenticMode 
+        ? 'http://localhost:8000/api/v2/analyze'
+        : 'http://localhost:8000/analyze_product'
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(
+          useAgenticMode 
+            ? { product_name: productName, user_context: "" }
+            : { product_name: productName }
+        )
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
-      setMessages(prev => [...prev, mockResponse])
+
+      const data = await response.json()
+      console.log('Backend response:', data)
+
+      if (useAgenticMode) {
+        // ✅ عرض البيانات حتى لو success: false
+        if (data.analysis || data.recommendations || data.error) {
+          const botMessage = {
+            type: 'bot-agentic',
+            data: {
+              analysis: data.analysis || data.error || 'No analysis available',
+              recommendations: data.recommendations || '',
+              full_report: data.full_report || '',
+              agents_used: data.agents_used || ['AI Agent']
+            }
+          }
+          setMessages(prev => [...prev, botMessage])
+        } else {
+          setMessages(prev => [...prev, {
+            type: 'bot-error',
+            text: 'No response from AI. Please try again.'
+          }])
+        }
+      } else {
+        const botMessage = {
+          type: 'bot-legacy',
+          data: {
+            detected_allergens: data.detected_allergens || [],
+            risk_level: data.risk_level || 'UNKNOWN',
+            ethical_score: data.ethical_score || 0,
+            recommendations: data.recommendations || []
+          }
+        }
+        setMessages(prev => [...prev, botMessage])
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      setMessages(prev => [...prev, {
+        type: 'bot-error',
+        text: `Error: ${error.message}`
+      }])
+    } finally {
       setLoading(false)
-    }, 1500)
+    }
   }
 
   const handleSend = () => {
@@ -76,7 +134,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Top Navigation Bar */}
       <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-50 shadow-sm">
         <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
@@ -123,9 +180,7 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Main Content */}
       <div className="flex pt-16">
-        {/* Left Sidebar */}
         <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed lg:relative lg:translate-x-0 left-0 top-16 w-80 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 transition-transform duration-300 z-40 flex flex-col shadow-xl lg:shadow-none`}>
           <div className="p-6 border-b border-gray-200 bg-gradient-to-br from-gray-50 to-white">
             <h2 className="text-lg font-bold text-gray-800 mb-3">Product Database</h2>
@@ -173,7 +228,6 @@ export default function App() {
           </div>
         </aside>
 
-        {/* Chat Interface */}
         <div className="flex-1 flex flex-col h-[calc(100vh-4rem)]">
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
             {messages.length === 0 ? (
@@ -185,7 +239,7 @@ export default function App() {
                     </svg>
                   </div>
                   <h3 className="text-2xl font-bold text-gray-800 mb-3">Welcome to AllerPredict AI</h3>
-                  <p className="text-gray-600 mb-6">Select a product or type to get comprehensive allergen and ethical analysis.</p>
+                  <p className="text-gray-600 mb-6">Select a product to get instant AI-powered allergen and safety analysis.</p>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="p-3 bg-blue-50 rounded-xl">
                       <div className="text-2xl mb-2">🔍</div>
@@ -222,26 +276,17 @@ export default function App() {
                       <div className="max-w-3xl">
                         <div className="bg-white rounded-2xl rounded-tl-sm shadow-lg border border-gray-200 overflow-hidden">
                           <div className="bg-gradient-to-r from-blue-50 to-purple-50 px-5 py-3 border-b border-gray-200">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                  </svg>
-                                </div>
-                                <div>
-                                  <p className="font-semibold text-gray-800">AI Analysis Complete</p>
-                                  {msg.data.agents_used && (
-                                    <p className="text-xs text-gray-500">
-                                      {msg.data.agents_used.join(' • ')}
-                                    </p>
-                                  )}
-                                </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                </svg>
                               </div>
-                              <div className="flex gap-1">
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <div>
+                                <p className="font-semibold text-gray-800">AI Analysis Complete</p>
+                                {msg.data.agents_used && (
+                                  <p className="text-xs text-gray-500">{msg.data.agents_used.join(' • ')}</p>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -309,6 +354,20 @@ export default function App() {
                       </div>
                     </div>
                   )
+                } else if (msg.type === 'bot-error') {
+                  return (
+                    <div key={i} className="flex justify-start">
+                      <div className="max-w-2xl bg-red-50 border border-red-200 rounded-2xl rounded-tl-sm shadow-lg p-5">
+                        <div className="flex items-center gap-2 mb-2">
+                          <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <h4 className="font-semibold text-red-800">Error</h4>
+                        </div>
+                        <p className="text-sm text-red-700">{msg.text}</p>
+                      </div>
+                    </div>
+                  )
                 }
                 return null
               })
@@ -324,7 +383,7 @@ export default function App() {
                       <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
                     </div>
                     <span className="text-sm text-gray-600">
-                      {useAgenticMode ? 'AI Agents analyzing...' : 'Processing...'}
+                      {useAgenticMode ? 'AI analyzing product...' : 'Processing...'}
                     </span>
                   </div>
                 </div>
@@ -334,28 +393,25 @@ export default function App() {
             <div ref={chatEndRef}></div>
           </div>
 
-          {/* Input Area */}
           <div className="border-t border-gray-200 bg-white p-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type a product name or question..."
-                  className="flex-1 px-5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition"
-                />
-                <button
-                  onClick={handleSend}
-                  disabled={loading || !input.trim()}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
-                </button>
-              </div>
+            <div className="max-w-4xl mx-auto flex gap-3">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type a product name..."
+                className="flex-1 px-5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition"
+              />
+              <button
+                onClick={handleSend}
+                disabled={loading || !input.trim()}
+                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>

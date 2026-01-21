@@ -16,33 +16,34 @@ class RecommendationAgentConfig:
         Returns:
             Agent: Configured Recommendation Agent
         """
+        # Use Ollama with Mistral model
         llm = Ollama(
-            model="llama2",
-            temperature=0.7
+            model="mistral",
+            temperature=0.5  # Slightly higher for creative recommendations
         )
         
         return Agent(
             role="Product Recommendation Specialist",
-            goal="Provide safer, healthier, and more ethical product alternatives based on analysis results",
-            backstory="""You are a product recommendation specialist with expertise in:
-            - Allergen-free alternatives
-            - Ethical and sustainable brands
-            - Local and fair-trade products
-            - Health-conscious food choices
-            
-            You analyze the results from the safety analyst and generate personalized 
-            recommendations that prioritize:
-            1. Safety (allergen-free options)
-            2. Ethics (fair trade, sustainable practices)
-            3. Quality and taste
-            4. Availability in local markets
-            
-            Your recommendations help users make better choices aligned with their 
-            health needs and values.""",
+            goal="Suggest safer, healthier, and more ethical alternatives based on the safety analysis",
+            backstory="""You are a nutrition and shopping expert who helps people find better products.
+
+Your expertise includes:
+- Knowing allergen-free alternatives
+- Understanding ethical and sustainable brands
+- Recommending products that match people's needs
+- Giving practical shopping advice
+
+You always:
+1. Use the alternative products mentioned in the analysis
+2. Suggest 2-4 specific alternative products
+3. Explain WHY each alternative is better
+4. Consider both safety AND ethics
+5. Give practical advice people can actually use
+
+Your goal is helping people make better, safer choices based on the analysis provided.""",
             verbose=True,
             allow_delegation=False,
             llm=llm
-            # أزلنا max_iter
         )
     
     @staticmethod
@@ -58,40 +59,50 @@ class RecommendationAgentConfig:
             Dict containing task configuration
         """
         return {
-            "description": f"""Based on the following product analysis:
+            "description": f"""
+TASK: Create helpful recommendations based on this safety analysis:
 
 {analysis_result}
 
-Generate a comprehensive recommendation report that includes:
+YOUR RECOMMENDATIONS MUST INCLUDE:
 
-1. **Safety Assessment Summary**
-   - Highlight the most critical allergens or risks
-   - Explain why these are concerning
+📋 SAFETY SUMMARY
+- Quickly summarize the main safety concerns from the analysis
+- Highlight the most important allergens mentioned
+- Use simple, clear language
 
-2. **Alternative Products** (2-4 options)
-   - Safer alternatives (allergen-free)
-   - More ethical alternatives (better ethical scores)
-   - Provide specific product names when available
+💡 ALTERNATIVE PRODUCTS (2-4 suggestions)
+- Use the "Recommended Alternatives" from the analysis if available
+- For each alternative, explain:
+  * Why it's safer (which allergens it avoids)
+  * Why it's more ethical (if mentioned in analysis)
+  * Compare it to the analyzed product
 
-3. **Actionable Recommendations**
-   - Clear guidance for the user
-   - What to look for in product labels
-   - Tips for safer shopping
+🛒 SHOPPING TIPS
+- What to look for on labels based on the allergens found
+- What ingredients/warnings to avoid
+- How to shop more safely for similar products
 
-4. **Final Verdict**
-   - Should the user avoid this product?
-   - Is it safe with precautions?
-   - Overall recommendation rating
+✅ FINAL RECOMMENDATION
+- Should they avoid this product? (Yes if High risk / With Caution if Medium / Safe if Low)
+- Overall safety rating (1-5 stars based on risk level)
+- One-sentence summary
 
-Format the output as a user-friendly report that is easy to understand.
+⚠️ IMPORTANT RULES:
+- Base recommendations on the analysis provided
+- Use alternative products mentioned in the analysis
+- If no alternatives in analysis, give general category guidance
+- Always explain your reasoning clearly
+- Be helpful and practical
 """,
             "agent": agent,
-            "expected_output": """A complete recommendation report with:
-            - Safety summary
-            - 2-4 alternative product suggestions
-            - Actionable shopping tips
-            - Final verdict and rating
-            """
+            "expected_output": """
+A helpful recommendation report with:
+1. Clear safety summary from the analysis
+2. 2-4 specific alternative products with explanations
+3. Practical shopping tips based on allergens found
+4. Final recommendation (Avoid/Caution/Safe) and star rating (1-5)
+"""
         }
     
     @staticmethod
