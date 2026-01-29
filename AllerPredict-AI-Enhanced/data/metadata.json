@@ -1,0 +1,122 @@
+[
+  {
+    "id": 1,
+    "name": "Peanut Butter Cookies",
+    "brand": "Sweet Treats Co.",
+    "category": "Bakery",
+    "ingredients": ["flour", "sugar", "peanut butter", "eggs", "butter", "baking soda", "salt"],
+    "allergens": ["peanuts", "eggs", "gluten", "dairy"],
+    "description": "Delicious homemade-style peanut butter cookies with rich, creamy texture",
+    "ethical_score": 7.5,
+    "company_info": "Sweet Treats Co. uses sustainable packaging and fair-trade ingredients",
+    "certifications": ["Non-GMO", "Fair Trade"]
+  },
+  {
+    "id": 2,
+    "name": "Almond Milk",
+    "brand": "NutriLife",
+    "category": "Dairy Alternative",
+    "ingredients": ["filtered water", "almonds", "calcium carbonate", "sea salt", "gellan gum", "vitamin D2"],
+    "allergens": ["tree nuts"],
+    "description": "Creamy almond milk, perfect for lactose-intolerant individuals",
+    "ethical_score": 8.2,
+    "company_info": "NutriLife focuses on sustainable agriculture and zero-waste production",
+    "certifications": ["Organic", "Vegan", "Gluten-Free"]
+  },
+  {
+    "id": 3,
+    "name": "Whole Wheat Bread",
+    "brand": "Harvest Bakery",
+    "category": "Bakery",
+    "ingredients": ["whole wheat flour", "water", "yeast", "honey", "salt", "vegetable oil"],
+    "allergens": ["gluten"],
+    "description": "100% whole wheat bread with no preservatives",
+    "ethical_score": 7.0,
+    "company_info": "Harvest Bakery sources locally grown wheat from family farms",
+    "certifications": ["Organic", "Non-GMO"]
+  },
+  {
+    "id": 4,
+    "name": "Greek Yogurt",
+    "brand": "MediCream",
+    "category": "Dairy",
+    "ingredients": ["milk", "live active cultures"],
+    "allergens": ["dairy"],
+    "description": "Rich and creamy Greek yogurt with probiotics",
+    "ethical_score": 6.8,
+    "company_info": "MediCream partners with local dairy farms",
+    "certifications": ["Gluten-Free"]
+  },
+  {
+    "id": 5,
+    "name": "Chocolate Hazelnut Spread",
+    "brand": "ChocoDream",
+    "category": "Spreads",
+    "ingredients": ["sugar", "palm oil", "hazelnuts", "cocoa", "skim milk powder", "soy lecithin"],
+    "allergens": ["tree nuts", "dairy", "soy"],
+    "description": "Smooth chocolate hazelnut spread, perfect for breakfast",
+    "ethical_score": 5.5,
+    "company_info": "ChocoDream has faced criticism for palm oil sourcing practices",
+    "certifications": []
+  },
+  {
+    "id": 6,
+    "name": "Quinoa Crackers",
+    "brand": "HealthSnack",
+    "category": "Snacks",
+    "ingredients": ["quinoa flour", "brown rice flour", "sesame seeds", "olive oil", "sea salt"],
+    "allergens": ["sesame"],
+    "description": "Gluten-free crackers made with superfood quinoa",
+    "ethical_score": 8.5,
+    "company_info": "HealthSnack is B-Corp certified with carbon-neutral operations",
+    "certifications": ["Organic", "Gluten-Free", "Vegan", "B-Corp"]
+  },
+  {
+    "id": 7,
+    "name": "Strawberry Jam",
+    "brand": "FarmFresh",
+    "category": "Preserves",
+    "ingredients": ["strawberries", "sugar", "pectin", "citric acid"],
+    "allergens": [],
+    "description": "All-natural strawberry jam with no artificial flavors",
+    "ethical_score": 7.8,
+    "company_info": "FarmFresh works directly with organic strawberry farmers",
+    "certifications": ["Organic", "Non-GMO", "Vegan"]
+  },
+  {
+    "id": 8,
+    "name": "Mixed Nuts Trail Mix",
+    "brand": "TrailBlazer",
+    "category": "Snacks",
+    "ingredients": ["almonds", "cashews", "walnuts", "raisins", "dark chocolate chips", "sea salt"],
+    "allergens": ["tree nuts", "dairy"],
+    "description": "Energy-packed trail mix for active lifestyles",
+    "ethical_score": 7.2,
+    "company_info": "TrailBlazer sources nuts from fair-trade suppliers",
+    "certifications": ["Fair Trade", "Gluten-Free"]
+  },
+  {
+    "id": 9,
+    "name": "Soy Sauce",
+    "brand": "AsianEssence",
+    "category": "Condiments",
+    "ingredients": ["water", "soybeans", "wheat", "salt"],
+    "allergens": ["soy", "gluten"],
+    "description": "Traditional brewed soy sauce for authentic flavor",
+    "ethical_score": 6.5,
+    "company_info": "AsianEssence uses traditional brewing methods",
+    "certifications": ["Non-GMO"]
+  },
+  {
+    "id": 10,
+    "name": "Rice Cakes",
+    "brand": "PurePuff",
+    "category": "Snacks",
+    "ingredients": ["brown rice", "sea salt"],
+    "allergens": [],
+    "description": "Light and crispy rice cakes, gluten-free and low calorie",
+    "ethical_score": 8.0,
+    "company_info": "PurePuff promotes sustainable rice farming practices",
+    "certifications": ["Organic", "Gluten-Free", "Vegan", "Non-GMO"]
+  }
+]
